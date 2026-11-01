@@ -16,7 +16,13 @@
   <span class="notice-icon">i</span>
   <div>
     <b>Local monitoring Â· Metadata only</b>
-    <p>This dashboard is for authorized local traffic inspection. Packet payloads are not displayed or stored. AI predictions remain disabled until live-flow features are validated against the trained model.</p>
+    <p>
+  This dashboard is for authorized local traffic inspection.
+  Packet payloads are not displayed or stored.
+  Experimental AI predictions are enabled for sufficiently mature flows.
+  Live feature mapping has not been independently validated, so AI results
+  are for review only and must not be treated as confirmed attacks.
+</p>
   </div>
 </div>
 
@@ -61,10 +67,12 @@
     <div class="metric-note">Metadata only</div>
   </div>
   <div class="metric-card">
-    <div class="metric-label">AI predictions</div>
-    <div class="metric-value">Disabled</div>
-    <div class="metric-note">Feature mapping not validated</div>
+  <div class="metric-label">AI predictions</div>
+  <div class="metric-value" id="ai-prediction-count">0</div>
+  <div class="metric-note" id="ai-prediction-status">
+    Experimental AI enabled
   </div>
+</div>
 </div>
 
 <section class="panel" style="margin-top:20px">
@@ -138,19 +146,22 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr>
-          <th>Protocol</th>
-          <th>Endpoint A</th>
-          <th>Endpoint B</th>
-          <th>Packets</th>
-          <th>Bytes</th>
-          <th>First seen</th>
-          <th>Last seen</th>
-        </tr>
-      </thead>
-      <tbody id="flow-table">
-        <tr><td colspan="7">Start monitoring to collect flows.</td></tr>
-      </tbody>
+    <tr>
+        <th>Protocol</th>
+        <th>Endpoint A</th>
+        <th>Endpoint B</th>
+        <th>Packets</th>
+        <th>Bytes</th>
+        <th>First seen</th>
+        <th>Last seen</th>
+        <th>Experimental AI result</th>
+    </tr>
+</thead>
+<tbody id="flow-table">
+    <tr>
+        <td colspan="8">Start monitoring to collect flows.</td>
+    </tr>
+</tbody>
     </table>
   </div>
 </section>
@@ -247,41 +258,91 @@
   function renderFlows(flows) {
     const flowTable = document.getElementById("flow-table");
     const flowCount = document.getElementById("flow-count");
+
+    if (!flowTable || !flowCount) return;
+
     flowTable.replaceChildren();
 
-    flowCount.textContent = `${(flows || []).length} flows`;
+    const flowList = Array.isArray(flows) ? flows : [];
 
-    if (!flows || !flows.length) {
-      const row = document.createElement("tr");
-      const cell = document.createElement("td");
-      cell.colSpan = 7;
-      cell.textContent = "No flows observed yet.";
-      row.appendChild(cell);
-      flowTable.appendChild(row);
-      return;
-    }
+    flowCount.textContent = `${flowList.length} flows`;
 
-    for (const flow of flows) {
-      const row = document.createElement("tr");
-      const values = [
-        flow.protocol,
-        flow.endpoint_a,
-        flow.endpoint_b,
-        flow.packets,
-        flow.bytes,
-        flow.first_seen,
-        flow.last_seen
-      ];
-
-      for (const value of values) {
+    if (!flowList.length) {
+        const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.textContent = String(value ?? "");
-        row.appendChild(cell);
-      }
 
-      flowTable.appendChild(row);
+        cell.colSpan = 8;
+        cell.textContent = "No flows observed yet.";
+
+        row.appendChild(cell);
+        flowTable.appendChild(row);
+        return;
     }
-  }
+
+    for (const flow of flowList) {
+        const row = document.createElement("tr");
+
+        const values = [
+            flow.protocol,
+            flow.endpoint_a,
+            flow.endpoint_b,
+            flow.packets,
+            flow.bytes,
+            flow.first_seen,
+            flow.last_seen
+        ];
+
+        for (const value of values) {
+            const cell = document.createElement("td");
+
+            cell.textContent = String(value ?? "");
+
+            row.appendChild(cell);
+        }
+
+        // Experimental AI prediction result.
+        const aiCell = document.createElement("td");
+
+        const status = flow.ai_prediction_status;
+
+        if (status === "pending") {
+            aiCell.textContent = "Waiting for mature flow";
+        }
+
+        else if (status === "processing") {
+            aiCell.textContent = "AI processing...";
+        }
+
+        else if (status === "error") {
+            aiCell.textContent = "Prediction error";
+        }
+
+        else if (flow.ai_prediction) {
+            const prediction = flow.ai_prediction;
+
+            const label = prediction.label || "Unknown";
+
+            const probability =
+                prediction.attack_probability;
+
+            aiCell.textContent =
+                `${label} | ${
+                    probability !== null &&
+                    probability !== undefined
+                        ? probability + "% probability"
+                        : "Probability unavailable"
+                } | Experimental`;
+        }
+
+        else {
+            aiCell.textContent = "Not evaluated";
+        }
+
+        row.appendChild(aiCell);
+
+        flowTable.appendChild(row);
+    }
+}
 
   let lastActivityTotal = null;
   const activityHistory = [];
@@ -401,28 +462,73 @@
     }
   }
 
-  async function refreshStatus() {
+ async function refreshStatus() {
     try {
-      const data = await api("/api/live-monitor/status");
-      document.getElementById("packet-count").textContent = data.packets_seen;
-      document.getElementById("tcp-count").textContent = data.tcp_count;
-      document.getElementById("udp-count").textContent = data.udp_count;
-      renderPackets(data.packets);
-      renderFlows(data.flows);
-      renderCharts(data);
-      renderSecurityAlerts(data.alerts);
+        const data = await api("/api/live-monitor/status");
 
-      const active = data.capture_active;
-      status.textContent = active ? "Monitoring active" : "Capture stopped";
-      engineStatus.textContent = active ? "Capturing on " + data.interface : "Capture stopped";
-      startButton.disabled = active;
-      stopButton.disabled = !active;
-      interfaceSelect.disabled = active;
-      if (data.error) message.textContent = data.error;
+        document.getElementById("packet-count").textContent =
+            data.packets_seen ?? 0;
+
+        document.getElementById("tcp-count").textContent =
+            data.tcp_count ?? 0;
+
+        document.getElementById("udp-count").textContent =
+            data.udp_count ?? 0;
+
+        // Update AI prediction metric.
+        const flows = Array.isArray(data.flows) ? data.flows : [];
+
+        const predictionCount = flows.filter(
+            flow => flow.ai_prediction !== null &&
+                    flow.ai_prediction !== undefined
+        ).length;
+
+        const aiCountElement =
+            document.getElementById("ai-prediction-count");
+
+        const aiStatusElement =
+            document.getElementById("ai-prediction-status");
+
+        if (aiCountElement) {
+            aiCountElement.textContent = predictionCount;
+        }
+
+        if (aiStatusElement) {
+            aiStatusElement.textContent =
+                data.ai_predictions_enabled
+                    ? "Experimental AI enabled | Not validated"
+                    : "Live AI model unavailable";
+        }
+
+        // Update all monitoring sections.
+        renderPackets(data.packets);
+        renderFlows(flows);
+        renderCharts(data);
+        renderSecurityAlerts(data.alerts);
+
+        // Update monitoring status.
+        const active = data.capture_active;
+
+        status.textContent = active
+            ? "Monitoring active"
+            : "Capture stopped";
+
+        engineStatus.textContent = active
+            ? "Capturing on " + data.interface
+            : "Capture stopped";
+
+        startButton.disabled = active;
+        stopButton.disabled = !active;
+        interfaceSelect.disabled = active;
+
+        if (data.error) {
+            message.textContent = data.error;
+        }
+
     } catch (error) {
-      message.textContent = error.message;
+        message.textContent = error.message;
     }
-  }
+}
 
   startButton.addEventListener("click", async () => {
     const selectedInterface = interfaceSelect.value;
