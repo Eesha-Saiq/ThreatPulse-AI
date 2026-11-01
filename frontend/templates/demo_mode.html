@@ -1,6 +1,102 @@
-{% extends "base.html" %}{% block title %}Demo Mode · ThreatPulse AI{% endblock %}{% block page_label %}Demo Mode{% endblock %}
-{% block content %}<div class="page-heading"><div><div class="eyebrow">CONTROLLED TEST WORKFLOW</div><h1>Demo mode</h1><p class="subheading">A safe place to develop repeatable scenarios and inspect their recorded outcomes.</p></div></div>
-<div class="notice"><span class="notice-icon">!</span><div><b>Placeholder only — no traffic is generated</b><p>The action below saves a clearly labelled simulated placeholder event. It does not send packets, execute an attack or run AI inference.</p></div></div>
-<section class="panel"><div class="panel-heading"><div><h2>Scenario launcher</h2><p>Temporary UI placeholder while the safe replay engine is developed.</p></div><span class="status-pill warning">UI prototype</span></div>
-<form method="post" class="scenario-form"><label for="scenario">Scenario label</label><select name="scenario" id="scenario"><option>Benign test event</option><option>Replay test placeholder</option><option>Suspicious-pattern test placeholder</option></select><button class="btn btn-primary" type="submit">Save labelled placeholder event</button></form></section>
-<section class="panel"><div class="panel-heading"><div><h2>Recent simulated placeholders</h2><p>These records are not verified detections.</p></div></div>{% if events %}<div class="table-wrap"><table><thead><tr><th>Scenario</th><th>Source</th><th>Severity</th><th>Time</th></tr></thead><tbody>{% for e in events %}<tr><td><b>{{ e.event_type }}</b><small class="table-sub">{{ e.reason }}</small></td><td><span class="status-pill warning">{{ e.source_type }}</span></td><td>{{ e.severity }}</td><td>{{ e.created_at }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state compact"><b>No demo placeholders saved</b><p>Use the form above to test local persistence.</p></div>{% endif %}</section>{% endblock %}
+
+{% extends "base.html" %}
+
+{% block title %}Demo Mode · ThreatPulse AI{% endblock %}
+{% block page_label %}Demo Mode{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CONTROLLED TEST WORKFLOW</div>
+        <h1>Demo Mode</h1>
+        <p class="subheading">
+            Run predefined simulated scenarios and review their recorded results.
+        </p>
+    </div>
+</div>
+
+<div class="notice">
+    <span class="notice-icon">!</span>
+    <div>
+        <b>Safe Simulation Environment</b>
+        <p>
+            These scenarios create clearly labelled simulated records only.
+            They do not generate real network traffic, execute attacks,
+            or run the AI detection model.
+        </p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Scenario Launcher</h2>
+            <p>Select a scenario to create a simulated event.</p>
+        </div>
+        <span class="status-pill warning">Simulation Mode</span>
+    </div>
+
+    <form method="post" class="scenario-form">
+        <label for="scenario">Select Scenario</label>
+
+        <select name="scenario" id="scenario" required>
+            {% for key, scenario in scenarios.items() %}
+                <option value="{{ key }}">{{ scenario.name }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn btn-primary" type="submit">
+            Run Simulation
+        </button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Recent Simulation Results</h2>
+            <p>Recorded simulated events from your test scenarios.</p>
+        </div>
+    </div>
+
+    {% if events %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Source</th>
+                        <th>Severity</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for e in events %}
+                    <tr>
+                        <td>
+                            <b>{{ e.event_type }}</b>
+                            <small class="table-sub">{{ e.reason }}</small>
+                        </td>
+                        <td>
+                            <span class="status-pill warning">
+                                {{ e.source_type }}
+                            </span>
+                        </td>
+                        <td>{{ e.severity }}</td>
+                        <td>{{ e.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state compact">
+            <b>No simulation results yet</b>
+            <p>Select a scenario above and click Run Simulation.</p>
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}

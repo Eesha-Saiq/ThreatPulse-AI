@@ -1,0 +1,44 @@
+{
+    "model": "ThreatPulse Live AI",
+    "features": [
+        "sport",
+        "dsport",
+        "proto",
+        "state",
+        "dur",
+        "sbytes",
+        "dbytes",
+        "Spkts",
+        "Dpkts",
+        "Sload",
+        "Dload",
+        "sttl",
+        "dttl",
+        "smeansz",
+        "dmeansz",
+        "synack",
+        "ackdat",
+        "tcprtt",
+        "is_sm_ips_ports"
+    ],
+    "training_records": 150000,
+    "testing_records": 50000,
+    "accuracy": 0.98694,
+    "precision": 0.9079305894163201,
+    "recall": 0.9982655313781141,
+    "f1_score": 0.9509575666541494,
+    "confusion_matrix": [
+        [
+            43016,
+            642
+        ],
+        [
+            11,
+            6331
+        ]
+    ],
+    "classes": {
+        "0": "Normal",
+        "1": "Potential Attack"
+    }
+}

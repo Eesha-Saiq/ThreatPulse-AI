@@ -124,13 +124,22 @@
     {% endif %}
   </div>
 
-  <div class="readiness-item">
-    <span class="readiness-symbol warn">!</span>
-    <div>
-      <b>Packet capture</b>
-      <small>Live capture has not been verified</small>
-    </div>
-    <span class="status-pill warning">Not verified</span>
+    <div class="readiness-item">
+    {% if capture_ready %}
+      <span class="readiness-symbol good">✓</span>
+      <div>
+        <b>Packet capture</b>
+        <small>Network interfaces are available</small>
+      </div>
+      <span class="status-pill success">Ready</span>
+    {% else %}
+      <span class="readiness-symbol warn">!</span>
+      <div>
+        <b>Packet capture</b>
+        <small>Network interfaces are not available</small>
+      </div>
+      <span class="status-pill warning">Not verified</span>
+    {% endif %}
   </div>
 
   <div class="readiness-item">
