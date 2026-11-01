@@ -1,0 +1,473 @@
+﻿{% extends "base.html" %}
+{% block title %}Live Monitor Â· ThreatPulse AI{% endblock %}
+{% block page_label %}Live Monitor{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">AUTHORIZED TRAFFIC ONLY</div>
+    <h1>Live monitor</h1>
+    <p class="subheading">Inspect packet metadata on a network interface you are authorized to monitor.</p>
+  </div>
+  <span class="status-pill warning" id="monitor-status">Ready to configure</span>
+</div>
+
+<div class="notice">
+  <span class="notice-icon">i</span>
+  <div>
+    <b>Local monitoring Â· Metadata only</b>
+    <p>This dashboard is for authorized local traffic inspection. Packet payloads are not displayed or stored. AI predictions remain disabled until live-flow features are validated against the trained model.</p>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Capture configuration</h2>
+      <p class="subheading">Choose the interface to monitor.</p>
+    </div>
+    <span class="status-pill" id="engine-status">Capture stopped</span>
+  </div>
+
+  <div class="form-group">
+    <label for="interface-select">Network interface</label>
+    <select id="interface-select" class="form-control">
+      <option value="">Loading interfaces...</option>
+    </select>
+  </div>
+
+  <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px">
+    <button type="button" class="btn btn-primary" id="start-monitor">Start monitoring</button>
+    <button type="button" class="btn btn-secondary" id="stop-monitor" disabled>Stop monitoring</button>
+    <button type="button" class="btn btn-secondary" id="refresh-interfaces">Refresh interfaces</button>
+  </div>
+  <p id="monitor-message" role="status" style="margin-top:14px">Checking available interfaces...</p>
+</section>
+
+<div class="metric-grid" style="margin-top:20px">
+  <div class="metric-card">
+    <div class="metric-label">Packets observed</div>
+    <div class="metric-value" id="packet-count">0</div>
+    <div class="metric-note">Current session</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">TCP packets</div>
+    <div class="metric-value" id="tcp-count">0</div>
+    <div class="metric-note">Metadata only</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">UDP packets</div>
+    <div class="metric-value" id="udp-count">0</div>
+    <div class="metric-note">Metadata only</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">AI predictions</div>
+    <div class="metric-value">Disabled</div>
+    <div class="metric-note">Feature mapping not validated</div>
+  </div>
+</div>
+
+<section class="panel" style="margin-top:20px">
+  <div class="panel-header">
+    <div>
+      <h2>Live traffic analytics</h2>
+      <p class="subheading">Protocol breakdown and recent packet activity.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:16px">
+        <div class="metric-card">
+          <h3>Protocol distribution</h3>
+          <div id="protocol-chart">Waiting for traffic...</div>
+        </div>
+        <div class="metric-card">
+          <h3>Recent traffic activity</h3>
+          <p class="subheading">Packets per refresh interval</p>
+          <div id="activity-chart" style="display:flex;align-items:flex-end;gap:5px;height:130px;padding-top:10px"></div>
+          <p id="activity-summary" class="subheading">Waiting for traffic...</p>
+        </div>
+      </div>
+      <h2>Live Security Alerts</h2>
+      <p class="subheading">Rule-based warnings for unusual packet activity. Alerts require investigation and do not confirm an attack.</p>
+      <div id="security-alert-summary" class="status-pill" style="display:inline-block;margin:12px 0">No alerts yet</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Severity</th>
+              <th>Alert</th>
+              <th>Source IP</th>
+              <th>Destination IP</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="security-alert-table">
+            <tr><td colspan="6">Start monitoring to watch for unusual activity.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>Recent packet metadata</h2>
+      <p class="subheading">No payloads, packet contents, or credentials are displayed.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Source IP</th>
+          <th>Destination IP</th>
+          <th>Protocol</th>
+          <th>Source port</th>
+          <th>Destination port</th>
+        </tr>
+      </thead>
+      <tbody id="packet-table">
+        <tr><td colspan="6">Monitoring has not started.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:20px">
+  <div class="panel-header">
+    <div>
+      <h2>Aggregated network flows</h2>
+      <p class="subheading">Bidirectional flow summaries. Metadata only; no packet payloads.</p>
+    </div>
+    <span class="status-pill" id="flow-count">0 flows</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Protocol</th>
+          <th>Endpoint A</th>
+          <th>Endpoint B</th>
+          <th>Packets</th>
+          <th>Bytes</th>
+          <th>First seen</th>
+          <th>Last seen</th>
+        </tr>
+      </thead>
+      <tbody id="flow-table">
+        <tr><td colspan="7">Start monitoring to collect flows.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+(() => {
+  const interfaceSelect = document.getElementById("interface-select");
+  const startButton = document.getElementById("start-monitor");
+  const stopButton = document.getElementById("stop-monitor");
+  const refreshButton = document.getElementById("refresh-interfaces");
+  const message = document.getElementById("monitor-message");
+  const status = document.getElementById("monitor-status");
+  const engineStatus = document.getElementById("engine-status");
+  const packetTable = document.getElementById("packet-table");
+
+
+  let pollHandle = null;
+
+  async function api(url, options = {}) {
+    const response = await fetch(url, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+    });
+    const data = await response.json();
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.message || "Request failed.");
+    }
+    return data;
+  }
+
+  async function loadInterfaces() {
+    refreshButton.disabled = true;
+    message.textContent = "Loading available interfaces...";
+    try {
+      const data = await api("/api/live-monitor/interfaces");
+      const previous = interfaceSelect.value;
+      interfaceSelect.replaceChildren();
+
+      for (const item of data.interfaces) {
+        const option = document.createElement("option");
+        option.value = item.name;
+        option.textContent = item.name + " ? " + item.description;
+        interfaceSelect.appendChild(option);
+      }
+
+      if (previous && [...interfaceSelect.options].some(o => o.value === previous)) {
+        interfaceSelect.value = previous;
+      } else if ([...interfaceSelect.options].some(o => o.value === "Wi-Fi")) {
+        interfaceSelect.value = "Wi-Fi";
+      }
+
+      if (!data.interfaces.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No interfaces found";
+        interfaceSelect.appendChild(option);
+      }
+      message.textContent = "Interfaces loaded. Select an authorized interface to begin.";
+    } catch (error) {
+      message.textContent = error.message;
+    } finally {
+      refreshButton.disabled = false;
+    }
+  }
+
+  function renderPackets(packets) {
+    packetTable.replaceChildren();
+    if (!packets || !packets.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 6;
+      cell.textContent = "No packet metadata observed yet.";
+      row.appendChild(cell);
+      packetTable.appendChild(row);
+      return;
+    }
+
+    for (const packet of packets) {
+      const row = document.createElement("tr");
+      const values = [
+        packet.time, packet.source_ip, packet.destination_ip,
+        packet.protocol, packet.source_port ?? "?",
+        packet.destination_port ?? "?"
+      ];
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = String(value);
+        row.appendChild(cell);
+      }
+      packetTable.appendChild(row);
+    }
+  }
+
+  function renderFlows(flows) {
+    const flowTable = document.getElementById("flow-table");
+    const flowCount = document.getElementById("flow-count");
+    flowTable.replaceChildren();
+
+    flowCount.textContent = `${(flows || []).length} flows`;
+
+    if (!flows || !flows.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 7;
+      cell.textContent = "No flows observed yet.";
+      row.appendChild(cell);
+      flowTable.appendChild(row);
+      return;
+    }
+
+    for (const flow of flows) {
+      const row = document.createElement("tr");
+      const values = [
+        flow.protocol,
+        flow.endpoint_a,
+        flow.endpoint_b,
+        flow.packets,
+        flow.bytes,
+        flow.first_seen,
+        flow.last_seen
+      ];
+
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = String(value ?? "");
+        row.appendChild(cell);
+      }
+
+      flowTable.appendChild(row);
+    }
+  }
+
+  let lastActivityTotal = null;
+  const activityHistory = [];
+
+  function renderCharts(data) {
+    const chart = document.getElementById("protocol-chart");
+    const activity = document.getElementById("activity-chart");
+    const summary = document.getElementById("activity-summary");
+    if (!chart || !activity || !summary) return;
+
+    const total = Math.max(0, Number(data.packets_seen) || 0);
+    const tcp = Math.max(0, Number(data.tcp_count) || 0);
+    const udp = Math.max(0, Number(data.udp_count) || 0);
+    const other = Math.max(0, total - tcp - udp);
+
+    chart.replaceChildren();
+
+    for (const item of [
+      { label: "TCP", count: tcp },
+      { label: "UDP", count: udp },
+      { label: "Other", count: other }
+    ]) {
+      const line = document.createElement("div");
+      line.style.margin = "12px 0";
+
+      const heading = document.createElement("div");
+      heading.style.cssText =
+        "display:flex;justify-content:space-between;margin-bottom:5px";
+
+      const label = document.createElement("span");
+      label.textContent = item.label;
+
+      const count = document.createElement("span");
+      count.textContent = item.count.toLocaleString();
+      heading.append(label, count);
+
+      const track = document.createElement("div");
+      track.style.cssText =
+        "height:9px;background:rgba(255,255,255,.12);border-radius:8px;overflow:hidden";
+
+      const bar = document.createElement("div");
+      const percent = total ? Math.min(100, item.count / total * 100) : 0;
+      bar.style.cssText =
+        `height:100%;width:${percent}%;background:#b99573;border-radius:8px;transition:width .25s`;
+
+      track.appendChild(bar);
+      line.append(heading, track);
+      chart.appendChild(line);
+    }
+
+    let delta = 0;
+    if (lastActivityTotal !== null) {
+      delta = total >= lastActivityTotal
+        ? total - lastActivityTotal
+        : total;
+    }
+    lastActivityTotal = total;
+
+    activityHistory.push(delta);
+    if (activityHistory.length > 20) activityHistory.shift();
+
+    activity.replaceChildren();
+    const peak = Math.max(1, ...activityHistory);
+
+    for (const value of activityHistory) {
+      const bar = document.createElement("div");
+      const height = Math.max(3, value / peak * 100);
+      bar.style.cssText =
+        `flex:1;min-width:3px;height:${height}%;background:#b99573;border-radius:4px 4px 0 0`;
+      bar.title = `${value} new packets`;
+      bar.setAttribute("aria-label", bar.title);
+      activity.appendChild(bar);
+    }
+
+    summary.textContent =
+      `Latest interval: ${delta} new packets | Peak: ${peak}`;
+  }
+  function renderSecurityAlerts(alerts) {
+    const table = document.getElementById("security-alert-table");
+    const summary = document.getElementById("security-alert-summary");
+    if (!table || !summary) return;
+
+    const items = Array.isArray(alerts) ? [...alerts].reverse() : [];
+    table.replaceChildren();
+
+    summary.textContent = items.length
+      ? `${items.length} alert${items.length === 1 ? "" : "s"} recorded`
+      : "No alerts yet";
+
+    if (!items.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 6;
+      cell.textContent = "No heuristic alerts recorded in this monitoring session.";
+      row.appendChild(cell);
+      table.appendChild(row);
+      return;
+    }
+
+    for (const alert of items) {
+      const row = document.createElement("tr");
+      const values = [
+        alert.time || "?",
+        alert.severity || "warning",
+        alert.type || "Unusual activity",
+        alert.source_ip || "?",
+        alert.destination_ip || "?",
+        alert.message || "Review this activity"
+      ];
+
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = String(value);
+        row.appendChild(cell);
+      }
+      table.appendChild(row);
+    }
+  }
+
+  async function refreshStatus() {
+    try {
+      const data = await api("/api/live-monitor/status");
+      document.getElementById("packet-count").textContent = data.packets_seen;
+      document.getElementById("tcp-count").textContent = data.tcp_count;
+      document.getElementById("udp-count").textContent = data.udp_count;
+      renderPackets(data.packets);
+      renderFlows(data.flows);
+      renderCharts(data);
+      renderSecurityAlerts(data.alerts);
+
+      const active = data.capture_active;
+      status.textContent = active ? "Monitoring active" : "Capture stopped";
+      engineStatus.textContent = active ? "Capturing on " + data.interface : "Capture stopped";
+      startButton.disabled = active;
+      stopButton.disabled = !active;
+      interfaceSelect.disabled = active;
+      if (data.error) message.textContent = data.error;
+    } catch (error) {
+      message.textContent = error.message;
+    }
+  }
+
+  startButton.addEventListener("click", async () => {
+    const selectedInterface = interfaceSelect.value;
+    if (!selectedInterface) {
+      message.textContent = "Please select an interface first.";
+      return;
+    }
+
+    startButton.disabled = true;
+    message.textContent = "Starting capture...";
+    try {
+      const data = await api("/api/live-monitor/start", {
+        method: "POST",
+        body: JSON.stringify({ interface: selectedInterface })
+      });
+      message.textContent = data.message;
+      await refreshStatus();
+      if (pollHandle === null) {
+        pollHandle = window.setInterval(refreshStatus, 1500);
+      }
+    } catch (error) {
+      message.textContent = error.message;
+      startButton.disabled = false;
+      await refreshStatus();
+    }
+  });
+
+  stopButton.addEventListener("click", async () => {
+    stopButton.disabled = true;
+    message.textContent = "Stopping capture...";
+    try {
+      const data = await api("/api/live-monitor/stop", { method: "POST", body: "{}" });
+      message.textContent = data.message;
+      await refreshStatus();
+    } catch (error) {
+      message.textContent = error.message;
+      await refreshStatus();
+    }
+  });
+
+  refreshButton.addEventListener("click", loadInterfaces);
+  loadInterfaces();
+  refreshStatus();
+})();
+</script>
+{% endblock %}
+
+

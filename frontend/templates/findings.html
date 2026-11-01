@@ -1,0 +1,239 @@
+
+{% extends "base.html" %}
+
+{% block title %}Threat Findings · ThreatPulse AI{% endblock %}
+{% block page_label %}Threat Findings{% endblock %}
+
+{% block content %}
+
+<style>
+    .finding-reason {
+        display: block;
+        margin-top: 8px;
+        max-width: 540px;
+        color: var(--text-secondary, #9ca9c9);
+        font-size: 13px;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .finding-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .finding-tag {
+        display: inline-block;
+        padding: 3px 7px;
+        border: 1px solid rgba(185, 149, 115, 0.35);
+        border-radius: 6px;
+        color: #e8bc85;
+        background: rgba(185, 149, 115, 0.10);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    .finding-time {
+        white-space: nowrap;
+        font-size: 12px;
+        color: var(--text-secondary, #9ca9c9);
+    }
+
+    .finding-review {
+        white-space: nowrap;
+    }
+
+    .finding-table {
+        min-width: 900px;
+    }
+
+    .finding-table td {
+        vertical-align: middle;
+        padding-top: 18px;
+        padding-bottom: 18px;
+    }
+
+    .finding-table td:first-child {
+        min-width: 340px;
+        width: 42%;
+    }
+
+    .finding-source {
+        white-space: nowrap;
+    }
+
+    .finding-severity {
+        white-space: nowrap;
+    }
+
+    .reviewed-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #70d6b5;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .finding-review form {
+        margin: 0;
+    }
+
+    .finding-review button {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .finding-table {
+            min-width: 820px;
+        }
+
+        .finding-table td:first-child {
+            min-width: 300px;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">EVENT REVIEW</div>
+        <h1>Threat findings</h1>
+        <p class="subheading">
+            Review model predictions and stored security events.
+        </p>
+    </div>
+</div>
+
+<div class="notice">
+    <span class="notice-icon">i</span>
+    <div>
+        <b>Evidence-first findings</b>
+        <p>
+            AI predictions identify potentially suspicious records, not
+            confirmed attacks. Review the available network evidence before
+            treating a finding as a security incident.
+        </p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Event register</h2>
+            <p>
+                {{ events|length }} saved event(s)
+                {% if ai_findings_count is defined %}
+                    · {{ ai_findings_count }} AI prediction finding(s)
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if events %}
+
+    <div class="table-wrap">
+        <table class="finding-table">
+            <thead>
+                <tr>
+                    <th>Event / reason</th>
+                    <th>Source</th>
+                    <th>Severity</th>
+                    <th>Time</th>
+                    <th>Review</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for e in events %}
+                <tr>
+                    <td>
+                        <div class="finding-title">
+                            <b>{{ e.event_type }}</b>
+
+                            {% if e.source_type == 'AI Prediction' %}
+                                <span class="finding-tag">AI detected</span>
+                            {% endif %}
+                        </div>
+
+                        <small class="finding-reason">
+                            {{ e.reason or 'No additional event details available.' }}
+                        </small>
+                    </td>
+
+                    <td class="finding-source">
+                        {% if e.source_type == 'AI Prediction' %}
+                            <span class="status-pill warning">
+                                AI Prediction
+                            </span>
+                        {% else %}
+                            <span class="status-pill">
+                                {{ e.source_type or 'Unknown' }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="finding-severity">
+                        {{ e.severity or 'Not specified' }}
+                    </td>
+
+                    <td>
+                        <span class="finding-time">
+                            {{ (e.created_at|string)|replace('T', ' ') }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if e.review_status == 'Reviewed' %}
+                            <span class="reviewed-label">
+                                ✓ Reviewed
+                            </span>
+                        {% else %}
+                            <span class="muted">Needs review</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="finding-review">
+                        {% if e.review_status != 'Reviewed' %}
+                            <form method="post">
+                                <input
+                                    type="hidden"
+                                    name="event_id"
+                                    value="{{ e.id }}"
+                                >
+                                <button
+                                    class="btn btn-small btn-secondary"
+                                    type="submit"
+                                >
+                                    Mark reviewed
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="muted">Done</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <div class="empty-icon">⬡</div>
+        <b>No findings yet</b>
+        <p>
+            Run a dataset analysis or save security events to see findings here.
+        </p>
+    </div>
+
+    {% endif %}
+</section>
+
+{% endblock %}

@@ -1,0 +1,216 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dataset Analysis · ThreatPulse AI{% endblock %}
+{% block page_label %}Dataset Analysis{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">DATA INGESTION & AI DETECTION</div>
+        <h1>Dataset analysis</h1>
+        <p class="subheading">
+            Upload network traffic data and inspect AI-based threat predictions.
+        </p>
+    </div>
+    <span class="env-chip">MAX FILE SIZE · 25 MB</span>
+</div>
+
+<div class="notice">
+    <span class="notice-icon">i</span>
+    <div>
+        <b>AI analysis status</b>
+        <p>
+            Predictions are generated using your locally trained baseline model.
+            The current analysis is limited to the first 1,000 rows.
+            Results are preliminary and should be verified before treating
+            any record as a confirmed threat.
+        </p>
+    </div>
+</div>
+
+<section class="panel upload-panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Upload dataset</h2>
+            <p>Choose a CSV file stored locally on your device.</p>
+        </div>
+        <span class="step-label">STEP 01 / 03</span>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+        <label class="drop-zone" for="dataset">
+            <span class="upload-symbol">↑</span>
+            <b>Choose a CSV file</b>
+            <span>Browse from your computer · CSV format only</span>
+            <input
+                type="file"
+                id="dataset"
+                name="dataset"
+                accept=".csv,text/csv"
+                required
+            >
+            <span class="selected-file" id="selected-file">
+                No file selected
+            </span>
+        </label>
+
+        <div class="form-actions">
+            <span class="muted">Processed locally by this app.</span>
+            <button class="btn btn-primary" type="submit">
+                Run AI analysis →
+            </button>
+        </div>
+    </form>
+</section>
+
+{% if prediction_summary %}
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <div class="eyebrow">MODEL OUTPUT</div>
+            <h2>AI prediction summary</h2>
+            <p>Predictions for the uploaded dataset sample.</p>
+        </div>
+        <span class="status-pill success">Analysis complete</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total analyzed</div>
+            <div class="stat-value">
+                {{ prediction_summary.total }}
+            </div>
+            <div class="stat-caption">Records processed</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Normal traffic</div>
+            <div class="stat-value">
+                {{ prediction_summary.normal }}
+            </div>
+            <div class="stat-caption">Predicted label: 0</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Potential attacks</div>
+            <div class="stat-value">
+                {{ prediction_summary.attacks }}
+            </div>
+            <div class="stat-caption">Predicted label: 1</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Potential attack rate</div>
+            <div class="stat-value">
+                {% if prediction_summary.total > 0 %}
+                    {{ "%.1f"|format(
+                        prediction_summary.attacks * 100 /
+                        prediction_summary.total
+                    ) }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="stat-caption">Share of analyzed records</div>
+        </div>
+    </div>
+
+    <div class="notice">
+        <span class="notice-icon">!</span>
+        <div>
+            <b>Interpret results carefully</b>
+            <p>
+                “Potential attack” means the model classified the record
+                as an attack. It is not proof of malicious activity.
+                Model quality depends on the training data and feature
+                compatibility.
+            </p>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if preview is not none %}
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Column schema</h2>
+            <p>
+                Column types and missing values in the analyzed sample.
+            </p>
+        </div>
+        <span class="status-pill success">Readable CSV</span>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Detected type</th>
+                    <th>Missing values</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for col in columns %}
+                <tr>
+                    <td><b>{{ col.name }}</b></td>
+                    <td>
+                        <span class="code-pill">{{ col.dtype }}</span>
+                    </td>
+                    <td>{{ col.missing }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="panel-heading preview-heading">
+        <div>
+            <h2>Row preview</h2>
+            <p>First 8 rows shown for inspection.</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {% for key in preview[0].keys() %}
+                    <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in preview %}
+                <tr>
+                    {% for value in row.values() %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("dataset");
+    const selectedFile = document.getElementById("selected-file");
+
+    if (input && selectedFile) {
+        input.addEventListener("change", function () {
+            selectedFile.textContent =
+                input.files.length > 0
+                    ? input.files[0].name
+                    : "No file selected";
+        });
+    }
+});
+</script>
+
+{% endblock %}

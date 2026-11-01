@@ -1,0 +1,141 @@
+{
+  "project": "ThreatPulse AI",
+  "training_file": "datasets\\uploads\\train_data.csv",
+  "testing_file": "datasets\\uploads\\test_data.csv",
+  "training_rows_loaded_before_label_filter": 100000,
+  "testing_rows_loaded_before_label_filter": 30000,
+  "actual_training_rows": 100000,
+  "actual_testing_rows": 30000,
+  "random_state": 42,
+  "note": "Uses the first configured rows from each CSV, matching the current baseline workflow. Results may be affected by row ordering and are not full-dataset evaluation.",
+  "results": [
+    {
+      "model": "SGDClassifier",
+      "accuracy": 0.9797666666666667,
+      "precision_attack": 0.8595754606951248,
+      "recall_attack": 0.9986449864498645,
+      "f1_attack": 0.9239062304124358,
+      "false_positive_rate": 0.022881033827442037,
+      "true_negative": 25708,
+      "false_positive": 602,
+      "false_negative": 5,
+      "true_positive": 3685,
+      "training_seconds": 5.297,
+      "prediction_seconds": 0.737,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9998055458328472,
+          "recall": 0.977118966172558,
+          "f1-score": 0.9883320838859735,
+          "support": 26310.0
+        },
+        "Attack": {
+          "precision": 0.8595754606951248,
+          "recall": 0.9986449864498645,
+          "f1-score": 0.9239062304124358,
+          "support": 3690.0
+        },
+        "accuracy": 0.9797666666666667,
+        "macro avg": {
+          "precision": 0.929690503263986,
+          "recall": 0.9878819763112112,
+          "f1-score": 0.9561191571492047,
+          "support": 30000.0
+        },
+        "weighted avg": {
+          "precision": 0.9825572453609074,
+          "recall": 0.9797666666666667,
+          "f1-score": 0.9804077039087283,
+          "support": 30000.0
+        }
+      }
+    },
+    {
+      "model": "LogisticRegression",
+      "accuracy": 0.9766666666666667,
+      "precision_attack": 0.8408572731418149,
+      "recall_attack": 0.9994579945799458,
+      "f1_attack": 0.9133234274393264,
+      "false_positive_rate": 0.02652983656404409,
+      "true_negative": 25612,
+      "false_positive": 698,
+      "false_negative": 2,
+      "true_positive": 3688,
+      "training_seconds": 12.44,
+      "prediction_seconds": 0.447,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9999219177012572,
+          "recall": 0.9734701634359559,
+          "f1-score": 0.9865187581850396,
+          "support": 26310.0
+        },
+        "Attack": {
+          "precision": 0.8408572731418149,
+          "recall": 0.9994579945799458,
+          "f1-score": 0.9133234274393264,
+          "support": 3690.0
+        },
+        "accuracy": 0.9766666666666667,
+        "macro avg": {
+          "precision": 0.920389595421536,
+          "recall": 0.9864640790079509,
+          "f1-score": 0.9499210928121831,
+          "support": 30000.0
+        },
+        "weighted avg": {
+          "precision": 0.9803569664204457,
+          "recall": 0.9766666666666667,
+          "f1-score": 0.9775157325033169,
+          "support": 30000.0
+        }
+      }
+    },
+    {
+      "model": "RandomForest",
+      "accuracy": 0.9816333333333334,
+      "precision_attack": 0.8709524935003545,
+      "recall_attack": 0.9986449864498645,
+      "f1_attack": 0.930438076000505,
+      "false_positive_rate": 0.020752565564424175,
+      "true_negative": 25764,
+      "false_positive": 546,
+      "false_negative": 5,
+      "true_positive": 3685,
+      "training_seconds": 14.852,
+      "prediction_seconds": 0.605,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9998059684116574,
+          "recall": 0.9792474344355758,
+          "f1-score": 0.9894199197373221,
+          "support": 26310.0
+        },
+        "Attack": {
+          "precision": 0.8709524935003545,
+          "recall": 0.9986449864498645,
+          "f1-score": 0.930438076000505,
+          "support": 3690.0
+        },
+        "accuracy": 0.9816333333333334,
+        "macro avg": {
+          "precision": 0.935379230956006,
+          "recall": 0.9889462104427202,
+          "f1-score": 0.9599289978689136,
+          "support": 30000.0
+        },
+        "weighted avg": {
+          "precision": 0.9839569909975672,
+          "recall": 0.9816333333333334,
+          "f1-score": 0.9821651529576936,
+          "support": 30000.0
+        }
+      }
+    }
+  ],
+  "ranking_by_attack_f1": [
+    "RandomForest",
+    "SGDClassifier",
+    "LogisticRegression"
+  ]
+}

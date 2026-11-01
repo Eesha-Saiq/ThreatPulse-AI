@@ -1,0 +1,83 @@
+
+{
+  "title": "ThreatPulse PDC Benchmark Results",
+  "workload": {
+    "type": "synthetic mathematical computation",
+    "operations": 5000000,
+    "correctness_verified": true
+  },
+  "openmp": {
+    "threads": 1,
+    "sequential_seconds": 0.083,
+    "parallel_seconds": 0.084,
+    "speedup": 0.988093,
+    "efficiency_percent": 98.809328,
+    "results_match": true
+  },
+  "openmp_scalability": [
+    {
+      "threads": 1,
+      "sequential_seconds": 0.083,
+      "parallel_seconds": 0.084,
+      "speedup": 0.988093,
+      "efficiency_percent": 98.809328,
+      "results_match": true
+    },
+    {
+      "threads": 2,
+      "sequential_seconds": 0.089,
+      "parallel_seconds": 0.047,
+      "speedup": 1.893610,
+      "efficiency_percent": 94.680495,
+      "results_match": true
+    },
+    {
+      "threads": 4,
+      "sequential_seconds": 0.082,
+      "parallel_seconds": 0.037,
+      "speedup": 2.216220,
+      "efficiency_percent": 55.405506,
+      "results_match": true
+    }
+  ],
+  "pthreads": {
+    "threads": 4,
+    "sequential_seconds": 0.089131,
+    "parallel_seconds": 0.037057,
+    "speedup": 2.405239,
+    "efficiency_percent": 60.130987,
+    "results_match": true
+  },
+  "mpi_scalability": [
+    {
+      "processes": 1,
+      "sequential_seconds": 0.167867,
+      "parallel_seconds": 0.166955,
+      "speedup": 1.005463,
+      "efficiency_percent": 100.546254,
+      "results_match": true
+    },
+    {
+      "processes": 2,
+      "sequential_seconds": 0.134737,
+      "parallel_seconds": 0.092255,
+      "speedup": 1.460481,
+      "efficiency_percent": 73.024072,
+      "results_match": true
+    },
+    {
+      "processes": 4,
+      "sequential_seconds": 0.141212,
+      "parallel_seconds": 0.068129,
+      "speedup": 2.072723,
+      "efficiency_percent": 51.818064,
+      "results_match": true
+    }
+  ],
+  "notes": [
+    "Results are from individual runs; timings may vary between runs.",
+    "The MPI and OpenMP measurements were collected in separate runs.",
+    "Synthetic workload results do not represent live network intrusion-detection performance.",
+    "MPI efficiency above 100 percent in the one-process run reflects measurement variation."
+  ]
+}

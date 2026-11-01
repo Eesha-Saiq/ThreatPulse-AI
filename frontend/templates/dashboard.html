@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Overview · ThreatPulse AI{% endblock %}
+{% block page_label %}Overview{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><div class="eyebrow"><span class="pulse"></span> SECURITY WORKSPACE</div><h1>Security overview</h1><p class="subheading">A clear view of your analysis activity, findings and system readiness.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('analysis') }}">＋ New analysis</a>
+</div>
+
+<div class="notice">
+    <span class="notice-icon">i</span>
+    <div>
+        <b>Local security workspace</b>
+        <p>
+            Dataset analysis and recorded PDC benchmarks are available locally.
+            Live packet capture depends on interface configuration, and AI
+            predictions are available through dataset analysis when the trained
+            model loads successfully.
+        </p>
+    </div>
+</div>
+
+
+<div class="metric-grid">
+  <article class="metric-card">
+    <div class="metric-top">
+      <span>Dataset scans</span>
+      <span class="metric-icon purple">▤</span>
+    </div>
+    <div class="metric-value">{{ scan_count }}</div>
+    <div class="metric-foot">Saved validation runs</div>
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top">
+      <span>Saved events</span>
+      <span class="metric-icon red">⬡</span>
+    </div>
+    <div class="metric-value">{{ event_count }}</div>
+    <div class="metric-foot">Recorded events and demo entries</div>
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top">
+      <span>AI model</span>
+      <span class="metric-icon amber">✳</span>
+    </div>
+    {% if model_ready %}
+      <div class="metric-value text-value">Available</div>
+      <div class="metric-foot">
+        <span class="status-pill success">Model file found</span>
+      </div>
+    {% else %}
+      <div class="metric-value text-value">Unavailable</div>
+      <div class="metric-foot">
+        <span class="status-pill warning">Model file missing</span>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top">
+      <span>PDC benchmarks</span>
+      <span class="metric-icon teal">◷</span>
+    </div>
+    {% if pdc_ready %}
+      <div class="metric-value text-value">Available</div>
+      <div class="metric-foot">
+        <span class="status-pill success">Results recorded</span>
+      </div>
+    {% else %}
+      <div class="metric-value text-value">Unavailable</div>
+      <div class="metric-foot">
+        <span class="status-pill warning">Report unavailable</span>
+      </div>
+    {% endif %}
+  </article>
+</div>
+
+<div class="content-grid">
+  <section class="panel">
+    <div class="panel-heading"><div><h2>Recent dataset activity</h2><p>Latest saved CSV validation attempts</p></div><a class="text-link" href="{{ url_for('history') }}">View history →</a></div>
+    {% if scans %}
+    <div class="table-wrap"><table><thead><tr><th>Dataset</th><th>Status</th><th>Rows sampled</th><th>Date</th></tr></thead><tbody>
+    {% for scan in scans %}<tr><td><b>{{ scan.filename }}</b></td><td><span class="status-pill {% if 'failed' in scan.status|lower %}danger{% else %}warning{% endif %}">{{ scan.status }}</span></td><td>{{ scan.row_count }}</td><td>{{ scan.created_at }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty-state"><div class="empty-icon">▤</div><b>No dataset activity yet</b><p>Upload a CSV to inspect its columns and validate the file.</p><a class="btn btn-secondary" href="{{ url_for('analysis') }}">Open dataset analysis</a></div>{% endif %}
+  </section>
+  <section class="panel">
+   
+<div class="panel-heading">
+  <div>
+    <h2>System readiness</h2>
+    <p>Core components at a glance</p>
+  </div>
+  <a class="text-link" href="{{ url_for('settings') }}">Details →</a>
+</div>
+
+<div class="readiness-list">
+  <div class="readiness-item">
+    <span class="readiness-symbol good">✓</span>
+    <div>
+      <b>Web application</b>
+      <small>Flask server running</small>
+    </div>
+    <span class="status-pill success">Ready</span>
+  </div>
+
+  <div class="readiness-item">
+    {% if model_ready %}
+      <span class="readiness-symbol good">✓</span>
+      <div>
+        <b>AI model</b>
+        <small>Trained model file is present</small>
+      </div>
+      <span class="status-pill success">Available</span>
+    {% else %}
+      <span class="readiness-symbol warn">!</span>
+      <div>
+        <b>AI model</b>
+        <small>Trained model file not found</small>
+      </div>
+      <span class="status-pill warning">Unavailable</span>
+    {% endif %}
+  </div>
+
+  <div class="readiness-item">
+    <span class="readiness-symbol warn">!</span>
+    <div>
+      <b>Packet capture</b>
+      <small>Live capture has not been verified</small>
+    </div>
+    <span class="status-pill warning">Not verified</span>
+  </div>
+
+  <div class="readiness-item">
+    {% if pdc_ready %}
+      <span class="readiness-symbol good">✓</span>
+      <div>
+        <b>PDC benchmarks</b>
+        <small>{{ pdc_message }}</small>
+      </div>
+      <span class="status-pill success">Available</span>
+    {% else %}
+      <span class="readiness-symbol warn">!</span>
+      <div>
+        <b>PDC benchmarks</b>
+        <small>{{ pdc_message }}</small>
+      </div>
+      <span class="status-pill warning">Unavailable</span>
+    {% endif %}
+  </div>
+</div>
+
+  </section>
+</div>
+<section class="panel quick-panel"><div class="panel-heading"><div><h2>Quick actions</h2><p>Continue building your security workflow</p></div></div><div class="quick-grid">
+<a class="quick-action" href="{{ url_for('analysis') }}"><span class="quick-icon purple">▤</span><span><b>Analyze a dataset</b><small>Upload and validate CSV data</small></span><span class="arrow">↗</span></a>
+<a class="quick-action" href="{{ url_for('demo_mode') }}"><span class="quick-icon amber">◇</span><span><b>Open demo mode</b><small>Explore labelled demo workflow</small></span><span class="arrow">↗</span></a>
+<a class="quick-action" href="{{ url_for('performance') }}"><span class="quick-icon teal">⌁</span><span><b>Performance lab</b><small>Review PDC implementation status</small></span><span class="arrow">↗</span></a>
+</div></section>
+{% endblock %}

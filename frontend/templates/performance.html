@@ -1,0 +1,544 @@
+
+{% extends "base.html" %}
+
+{% block title %}Performance Lab · ThreatPulse AI{% endblock %}
+{% block page_label %}Performance Lab{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">MODEL EVALUATION & BENCHMARKING</div>
+        <h1>Performance Lab</h1>
+        <p class="subheading">
+            Compare machine-learning performance and review benchmark readiness.
+        </p>
+    </div>
+    <span class="status-pill neutral">Evaluation Results</span>
+</div>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>AI Model Comparison</h2>
+            <p>Results loaded from the saved model comparison report.</p>
+        </div>
+    </div>
+
+    {% if comparison and comparison.results %}
+
+        {% set successful = comparison.results
+            | selectattr('f1_attack', 'defined')
+            | list %}
+
+        {% if successful %}
+
+            {% set best = successful
+                | sort(attribute='f1_attack', reverse=true)
+                | first %}
+
+            <div class="notice">
+                <span class="notice-icon">i</span>
+                <div>
+                    <b>Best model in this comparison: {{ best.model }}</b>
+                    <p>
+                        Attack F1-score:
+                        {{ "%.2f"|format(best.f1_attack * 100) }}%.
+                        This ranking is based on the saved evaluation results,
+                        not a guarantee of performance on unseen real-world traffic.
+                    </p>
+                </div>
+            </div>
+
+            <div class="variant-grid">
+                <div class="variant-card">
+                    <span class="variant-number">01</span>
+                    <h3>{{ best.model }}</h3>
+                    <p>Highest attack F1-score in the available comparison.</p>
+                    <span class="status-pill neutral">Top F1-score</span>
+                </div>
+
+                <div class="variant-card">
+                    <span class="variant-number">02</span>
+                    <h3>{{ "%.2f"|format(best.accuracy * 100) }}%</h3>
+                    <p>Accuracy on the configured test sample.</p>
+                </div>
+
+                <div class="variant-card">
+                    <span class="variant-number">03</span>
+                    <h3>{{ "%.2f"|format(best.recall_attack * 100) }}%</h3>
+                    <p>Attack recall — proportion of actual attacks detected.</p>
+                </div>
+
+                <div class="variant-card">
+                    <span class="variant-number">04</span>
+                    <h3>{{ "%.2f"|format(best.false_positive_rate * 100) }}%</h3>
+                    <p>False positive rate — normal rows predicted as attacks.</p>
+                </div>
+            </div>
+
+            <div class="panel-heading">
+                <div>
+                    
+            <div class="panel-heading">
+                <div>
+                    
+            <script id="model-comparison-data" type="application/json">
+                {{ comparison.results | default([], true) | tojson }}
+            </script>
+
+                    <h2>Visual Performance Analysis</h2>
+                    <p>Compare model quality, false alarms, execution time, and classification outcomes.</p>
+                </div>
+            </div>
+
+            <div class="variant-grid">
+                <div class="variant-card">
+                    <h3>Model Performance</h3>
+                    <p>Accuracy, precision, recall and F1-score</p>
+                    <div style="height:280px; position:relative;">
+                        <canvas id="modelPerformanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="variant-card">
+                    <h3>False Positive Rate</h3>
+                    <p>Percentage of normal traffic incorrectly flagged</p>
+                    <div style="height:280px; position:relative;">
+                        <canvas id="falsePositiveChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="variant-card">
+                    <h3>Training vs Prediction Time</h3>
+                    <p>Measured execution time in seconds</p>
+                    <div style="height:280px; position:relative;">
+                        <canvas id="executionTimeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="variant-card">
+                    <h3>Confusion Matrix</h3>
+                    <p>Classification outcomes for the best F1-score model</p>
+                    <div style="height:280px; position:relative;">
+                        <canvas id="confusionMatrixChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+                    <h2>Detailed Comparison</h2>
+                    <p>Models ranked by attack F1-score.</p>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Accuracy</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-score</th>
+                            <th>False positives</th>
+                            <th>Training (s)</th>
+                            <th>Prediction (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in successful|sort(attribute='f1_attack', reverse=true) %}
+                        <tr>
+                            <td>
+                                <strong>{{ model.model }}</strong>
+                                {% if loop.first %}
+                                    <span class="status-pill neutral">Top F1</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ "%.2f"|format(model.accuracy * 100) }}%</td>
+                            <td>{{ "%.2f"|format(model.precision_attack * 100) }}%</td>
+                            <td>{{ "%.2f"|format(model.recall_attack * 100) }}%</td>
+                            <td>{{ "%.2f"|format(model.f1_attack * 100) }}%</td>
+                            <td>{{ "%.2f"|format(model.false_positive_rate * 100) }}%</td>
+                            <td>{{ "%.2f"|format(model.training_seconds) }}</td>
+                            <td>{{ "%.2f"|format(model.prediction_seconds) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="notice">
+                <span class="notice-icon">i</span>
+                <div>
+                    <b>Evaluation scope</b>
+                    <p>
+                        Training rows: {{ comparison.actual_training_rows|default("N/A") }}.
+                        Test rows: {{ comparison.actual_testing_rows|default("N/A") }}.
+                        The comparison script uses the first configured rows from
+                        the CSV files. Dataset ordering may affect these results.
+                        Validate with representative, unseen data before making
+                        final performance claims.
+                    </p>
+                </div>
+            </div>
+
+            <div class="panel-heading">
+                <div>
+                    <h2>Confusion Matrix Counts</h2>
+                    <p>Actual versus predicted class totals for each model.</p>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>True Normal</th>
+                            <th>False Attack Alerts</th>
+                            <th>Missed Attacks</th>
+                            <th>Detected Attacks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in successful|sort(attribute='f1_attack', reverse=true) %}
+                        <tr>
+                            <td>{{ model.model }}</td>
+                            <td>{{ model.true_negative }}</td>
+                            <td>{{ model.false_positive }}</td>
+                            <td>{{ model.false_negative }}</td>
+                            <td>{{ model.true_positive }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <div class="notice">
+                <span class="notice-icon">i</span>
+                <div>
+                    <b>No successful model results</b>
+                    <p>The comparison report exists, but it has no valid evaluation results.</p>
+                </div>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="notice">
+            <span class="notice-icon">i</span>
+            <div>
+                <b>Model comparison report unavailable</b>
+                <p>
+                    {{ comparison_error or
+                    "Run compare_models.py to generate the comparison report." }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Parallel Computing Benchmarks</h2>
+            <p>
+                Recorded local benchmark results for OpenMP, POSIX Pthreads,
+                and MPI using a common synthetic mathematical workload.
+            </p>
+        </div>
+        <span class="status-pill neutral">
+            {% if pdc_benchmarks %}Results loaded{% else %}Results unavailable{% endif %}
+        </span>
+    </div>
+
+    {% if pdc_benchmarks %}
+
+        <div class="notice">
+            <span class="notice-icon">i</span>
+            <div>
+                <b>Benchmark scope and limitations</b>
+                <p>
+                    Workload: {{ "{:,}".format(pdc_benchmarks.workload.operations) }}
+                    calculations. Correctness was checked against the sequential
+                    implementation. These are recorded measurements, not live
+                    benchmark runs. Execution times vary with system load and
+                    hardware. This synthetic workload does not measure live
+                    network intrusion-detection performance.
+                </p>
+            </div>
+        </div>
+
+        <div class="variant-grid">
+            <div class="variant-card">
+                <span class="variant-number">01</span>
+                <h3>OpenMP</h3>
+                <p>Four-thread run</p>
+                <h2>{{ "%.3f"|format(pdc_benchmarks.openmp_scalability[-1].parallel_seconds) }} s</h2>
+                <p>Speedup: {{ "%.2f"|format(pdc_benchmarks.openmp_scalability[-1].speedup) }}x</p>
+                <p>Efficiency: {{ "%.2f"|format(pdc_benchmarks.openmp_scalability[-1].efficiency_percent) }}%</p>
+                <span class="status-pill neutral">
+                    {{ "Verified" if pdc_benchmarks.openmp_scalability[-1].results_match else "Check failed" }}
+                </span>
+            </div>
+
+            <div class="variant-card">
+                <span class="variant-number">02</span>
+                <h3>POSIX Pthreads</h3>
+                <p>{{ pdc_benchmarks.pthreads.threads }} threads</p>
+                <h2>{{ "%.3f"|format(pdc_benchmarks.pthreads.parallel_seconds) }} s</h2>
+                <p>Speedup: {{ "%.2f"|format(pdc_benchmarks.pthreads.speedup) }}x</p>
+                <p>Efficiency: {{ "%.2f"|format(pdc_benchmarks.pthreads.efficiency_percent) }}%</p>
+                <span class="status-pill neutral">
+                    {{ "Verified" if pdc_benchmarks.pthreads.results_match else "Check failed" }}
+                </span>
+            </div>
+
+            <div class="variant-card">
+                <span class="variant-number">03</span>
+                <h3>MPI</h3>
+                <p>Four-process run</p>
+                <h2>{{ "%.3f"|format(pdc_benchmarks.mpi_scalability[-1].parallel_seconds) }} s</h2>
+                <p>Speedup: {{ "%.2f"|format(pdc_benchmarks.mpi_scalability[-1].speedup) }}x</p>
+                <p>Efficiency: {{ "%.2f"|format(pdc_benchmarks.mpi_scalability[-1].efficiency_percent) }}%</p>
+                <span class="status-pill neutral">
+                    {{ "Verified" if pdc_benchmarks.mpi_scalability[-1].results_match else "Check failed" }}
+                </span>
+            </div>
+        </div>
+
+        <div class="panel-heading">
+            <div>
+
+<div class="panel-heading">
+    <div>
+        <h2>PDC Visual Performance Analysis</h2>
+        <p>
+            Compare recorded execution times and speedup across parallel
+            computing configurations.
+        </p>
+    </div>
+</div>
+
+<div class="variant-grid">
+    <div class="variant-card">
+        <h3>Execution Time Comparison</h3>
+        <p>Sequential versus parallel execution time (seconds).</p>
+        <div style="height:360px; position:relative; margin-bottom:16px;;">
+            <canvas id="pdcExecutionTimeChart"></canvas>
+        </div>
+    </div>
+
+    <div class="variant-card">
+        <h3>Parallel Speedup</h3>
+        <p>Measured speedup as thread and process counts increase.</p>
+        <div style="height:300px; position:relative;">
+            <canvas id="pdcSpeedupChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script id="pdc-benchmark-data" type="application/json">
+    {{ pdc_benchmarks | tojson }}
+</script>
+<div style="height: 20px;"></div>
+                <h2>OpenMP Scalability</h2>
+                <p>Recorded results for different thread counts.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Threads</th>
+                        <th>Sequential (s)</th>
+                        <th>Parallel (s)</th>
+                        <th>Speedup</th>
+                        <th>Efficiency</th>
+                        <th>Correctness</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in pdc_benchmarks.openmp_scalability %}
+                    <tr>
+                        <td>{{ result.threads }}</td>
+                        <td>{{ "%.6f"|format(result.sequential_seconds) }}</td>
+                        <td>{{ "%.6f"|format(result.parallel_seconds) }}</td>
+                        <td>{{ "%.2f"|format(result.speedup) }}x</td>
+                        <td>{{ "%.2f"|format(result.efficiency_percent) }}%</td>
+                        <td>{{ "PASS" if result.results_match else "FAIL" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel-heading">
+            <div>
+                <h2>MPI Scalability</h2>
+                <p>Recorded results for different MPI process counts.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Processes</th>
+                        <th>Sequential (s)</th>
+                        <th>Parallel (s)</th>
+                        <th>Speedup</th>
+                        <th>Efficiency</th>
+                        <th>Correctness</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in pdc_benchmarks.mpi_scalability %}
+                    <tr>
+                        <td>{{ result.processes }}</td>
+                        <td>{{ "%.6f"|format(result.sequential_seconds) }}</td>
+                        <td>{{ "%.6f"|format(result.parallel_seconds) }}</td>
+                        <td>{{ "%.2f"|format(result.speedup) }}x</td>
+                        <td>{{ "%.2f"|format(result.efficiency_percent) }}%</td>
+                        <td>{{ "PASS" if result.results_match else "FAIL" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+        <div class="notice">
+            <span class="notice-icon">i</span>
+            <div>
+                <b>Benchmark results unavailable</b>
+                <p>
+                    {{ pdc_error or "Check reports/pdc_benchmarks.json." }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const dataElement = document.getElementById("pdc-benchmark-data");
+
+    if (!dataElement || typeof Chart === "undefined") {
+        return;
+    }
+
+    let benchmarkData;
+
+    try {
+        benchmarkData = JSON.parse(dataElement.textContent);
+    } catch (error) {
+        console.error("Could not parse PDC benchmark data:", error);
+        return;
+    }
+
+    if (!benchmarkData || !benchmarkData.openmp_scalability ||
+        !benchmarkData.mpi_scalability || !benchmarkData.pthreads) {
+        return;
+    }
+
+    const openmp = benchmarkData.openmp_scalability;
+    const mpi = benchmarkData.mpi_scalability;
+    const pthreads = benchmarkData.pthreads;
+
+    const executionCanvas = document.getElementById("pdcExecutionTimeChart");
+    const speedupCanvas = document.getElementById("pdcSpeedupChart");
+
+    if (executionCanvas) {
+        new Chart(executionCanvas, {
+            type: "bar",
+            data: {
+                labels: [
+                    "OpenMP (4 threads)",
+                    "Pthreads (4 threads)",
+                    "MPI (4 processes)"
+                ],
+                datasets: [
+                    {
+                        label: "Sequential time (seconds)",
+                        data: [
+                            openmp[openmp.length - 1].sequential_seconds,
+                            pthreads.sequential_seconds,
+                            mpi[mpi.length - 1].sequential_seconds
+                        ]
+                    },
+                    {
+                        label: "Parallel time (seconds)",
+                        data: [
+                            openmp[openmp.length - 1].parallel_seconds,
+                            pthreads.parallel_seconds,
+                            mpi[mpi.length - 1].parallel_seconds
+                        ]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Seconds"
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    if (speedupCanvas) {
+        new Chart(speedupCanvas, {
+            type: "line",
+            data: {
+                labels: ["1", "2", "4"],
+                datasets: [
+                    {
+                        label: "OpenMP speedup",
+                        data: openmp.map(item => item.speedup),
+                        tension: 0.25
+                    },
+                    {
+                        label: "MPI speedup",
+                        data: mpi.map(item => item.speedup),
+                        tension: 0.25
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Speedup (x)"
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Threads / processes"
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+
+{% endblock %}

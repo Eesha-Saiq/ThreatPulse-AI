@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ThreatPulse AI{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard') }}">
+      <span class="brand-mark">TP</span><span><strong>ThreatPulse</strong><small>AI SECURITY LAB</small></span>
+    </a>
+    <div class="nav-caption">WORKSPACE</div>
+    <nav>
+      {% for label, endpoint, icon_name in nav_items %}
+      <a class="nav-link {% if current_endpoint == endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}">
+        <span class="nav-icon">{% if endpoint == 'dashboard' %}◈{% elif endpoint == 'analysis' %}▤{% elif endpoint == 'live_monitor' %}⌁{% elif endpoint == 'demo_mode' %}◇{% elif endpoint == 'findings' %}⬡{% elif endpoint == 'performance' %}⌁{% elif endpoint == 'history' %}◷{% else %}⚙{% endif %}</span>
+        <span>{{ label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="local-badge"><span class="status-dot"></span><span><b>Local environment</b><small>Data stays on this device</small></span></div>
+      <div class="sidebar-foot">THREATPULSE AI <span>•</span> MVP</div>
+    </div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar">
+      <div class="crumb">SECURITY OPERATIONS <span>/</span> <b>{% block page_label %}Overview{% endblock %}</b></div>
+      <div class="top-actions"><span class="env-chip"><i></i> LOCAL MODE</span><div class="avatar">TP</div></div>
+    </header>
+    <section class="page-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+      <footer class="page-footer">ThreatPulse AI <span>•</span> Local-first cybersecurity learning environment <span>•</span> No cloud upload</footer>
+    </section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

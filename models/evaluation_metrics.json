@@ -1,0 +1,98 @@
+{
+  "model": "SGDClassifier with log_loss",
+  "task": "Binary intrusion detection",
+  "random_state": 42,
+  "training_rows_used": 100000,
+  "testing_rows_used": 30000,
+  "accuracy": 0.9795,
+  "precision_attack": 0.8576413119330076,
+  "recall_attack": 0.9991869918699187,
+  "f1_attack": 0.923019151333083,
+  "confusion_matrix_labels": [
+    "Normal",
+    "Attack"
+  ],
+  "confusion_matrix": [
+    [
+      25698,
+      612
+    ],
+    [
+      3,
+      3687
+    ]
+  ],
+  "classification_report": {
+    "Normal": {
+      "precision": 0.999883273024396,
+      "recall": 0.976738882554162,
+      "f1-score": 0.988175578243064,
+      "support": 26310.0
+    },
+    "Attack": {
+      "precision": 0.8576413119330076,
+      "recall": 0.9991869918699187,
+      "f1-score": 0.923019151333083,
+      "support": 3690.0
+    },
+    "accuracy": 0.9795,
+    "macro avg": {
+      "precision": 0.9287622924787018,
+      "recall": 0.9879629372120403,
+      "f1-score": 0.9555973647880736,
+      "support": 30000.0
+    },
+    "weighted avg": {
+      "precision": 0.9823875118101552,
+      "recall": 0.9795,
+      "f1-score": 0.9801613377331363,
+      "support": 30000.0
+    }
+  },
+  "features_used": [
+    "sport",
+    "dsport",
+    "proto",
+    "state",
+    "dur",
+    "sbytes",
+    "dbytes",
+    "sttl",
+    "dttl",
+    "sloss",
+    "dloss",
+    "service",
+    "Sload",
+    "Dload",
+    "Spkts",
+    "Dpkts",
+    "swin",
+    "dwin",
+    "stcpb",
+    "dtcpb",
+    "smeansz",
+    "dmeansz",
+    "trans_depth",
+    "res_bdy_len",
+    "Sjit",
+    "Djit",
+    "Sintpkt",
+    "Dintpkt",
+    "tcprtt",
+    "synack",
+    "ackdat",
+    "is_sm_ips_ports",
+    "ct_state_ttl",
+    "ct_flw_http_mthd",
+    "is_ftp_login",
+    "ct_ftp_cmd",
+    "ct_srv_src",
+    "ct_srv_dst",
+    "ct_dst_ltm",
+    "ct_src_ltm",
+    "ct_src_dport_ltm",
+    "ct_dst_sport_ltm",
+    "ct_dst_src_ltm"
+  ],
+  "sampling_note": "This initial run uses the first configured number of valid rows from each CSV. Results may not represent the full datasets if rows are ordered by label."
+}
